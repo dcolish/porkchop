@@ -117,3 +117,9 @@ class PorkchopPluginHandler(object):
           return getattr(mod,basename)
         else:
           raise
+
+def test_plugin_data(plugin_name):
+  plugin_handler = PorkchopPluginHandler('')
+  plugin_ = plugin_handler.plugins[plugin_name]()
+  plugin_.config = parse_config(plugin_.config_file)
+  return plugin_.get_data()
