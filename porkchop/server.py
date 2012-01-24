@@ -74,6 +74,8 @@ class GetHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(self.format_output(fmt, data) + '\n')
       else:
+        # FIXME:dc: this is not actually a failure to load plugings, just no new
+        # data was returned
         raise Exception('Unable to load any plugins')
     except:
       self.log_error('Error: %s', sys.exc_info())

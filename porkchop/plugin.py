@@ -4,7 +4,7 @@ import socket
 import time
 
 import porkchop.plugins
-from porkchop.util import PorkchopUtil
+from porkchop.util import parse_config
 
 class PorkchopPlugin(object):
   config_file = None
@@ -15,20 +15,20 @@ class PorkchopPlugin(object):
   def __init__(self):
     self.refresh = 60
     self.force_refresh = False
+    self.config = parse_config(self.config_file)
 
   @property
   def data(self):
     if self.should_refresh():
-      self.config = PorkchopUtil.parse_config(self.config_file)
-      self.data = self.get_data()
+      self._data = self.get_data()
 
-    return self.__class__._data
+    return self._data
 
   @data.setter
   def data(self, value):
-    self.__class__._data = value
-    self.__class__._lastrefresh = time.time()
-    self.__class__._data['refreshtime'] = int(self.__class__._lastrefresh)
+    self._data = value
+    self._lastrefresh = time.time()
+    self._data['refreshtime'] = int(self._lastrefresh)
     self.force_refresh = False
 
   def gendict(self):
@@ -42,7 +42,7 @@ class PorkchopPlugin(object):
       return True
 
     if self.__class__._lastrefresh != 0:
-      if time.time() - self.__class__._lastrefresh > self.refresh:
+      if time.time() - self._lastrefresh > self.refresh:
         return True
       else:
         return False
@@ -72,8 +72,7 @@ class PorkchopPluginHandler(object):
 
   def __init__(self, config_dir, directory = None):
     self.config_dir = config_dir
-    self.config = PorkchopUtil.parse_config(os.path.join(self.config_dir,
-      'porkchop.ini'))
+    self.config = parse_config(os.path.join(self.config_dir, 'porkchop.ini'))
 
     if directory:
       self.__class__.plugins.update(self.load_plugins(directory))
