@@ -4,6 +4,7 @@ from optparse import OptionParser
 
 from porkchop.plugin import PorkchopPluginHandler
 
+
 def coerce_number(s):
   try:
     return int(s)
@@ -48,10 +49,11 @@ def main():
 
   (options, args) = parser.parse_args()
 
-  socket.setdefaulttimeout(3)
-  PorkchopPluginHandler(options.config_dir, options.plugin_dir)
+  socket.setdefaulttimeout(60)
+
   server = ThreadedHTTPServer((options.listen_address, options.listen_port),
                               GetHandler)
+  server.plugins = PorkchopPluginHandler(options.config_dir, options.plugin_dir).plugins
   server.serve_forever()
 
 def collector():

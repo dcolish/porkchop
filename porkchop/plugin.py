@@ -75,9 +75,9 @@ class PorkchopPluginHandler(object):
     self.config = parse_config(os.path.join(self.config_dir, 'porkchop.ini'))
 
     if directory:
-      self.__class__.plugins.update(self.load_plugins(directory))
+      self.plugins.update(self.load_plugins(directory))
 
-    self.__class__.plugins.update(self.load_plugins(os.path.dirname(porkchop.plugins.__file__)))
+    self.plugins.update(self.load_plugins(os.path.dirname(porkchop.plugins.__file__)))
 
   def load_plugins(self, directory):
     plugins = {}
@@ -93,10 +93,11 @@ class PorkchopPluginHandler(object):
       if os.path.basename(infile) != '__init__.py' and \
           (not to_load or module_name in to_load):
         try:
-          plugins[module_name] = self.str_to_obj('%s.%sPlugin' % (module_name,
+          mod_= self.str_to_obj('%s.%sPlugin' % (module_name,
             module_name.capitalize()))
-          plugins[module_name].config_file = os.path.join(self.config_dir,
+          mod_.config_file = os.path.join(self.config_dir,
             '%s.ini' % module_name)
+          plugins[module_name] = mod_()
         except ImportError:
           pass
 

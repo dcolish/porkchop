@@ -1,11 +1,9 @@
 from collections import defaultdict
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer, _quote_html
 import json
 from SocketServer import ThreadingMixIn
 import sys
 import urlparse
-
-from porkchop.plugin import PorkchopPluginHandler
 
 class GetHandler(BaseHTTPRequestHandler):
   def format_output(self, fmt, data):
@@ -34,12 +32,14 @@ class GetHandler(BaseHTTPRequestHandler):
 
     try:
       (path, fmt) = request.path.split('.')
-      if fmt not in formats.keys(): fmt = 'text'
+      if fmt not in formats.keys():
+        fmt = 'text'
     except ValueError:
       path = request.path
-      if self.headers.get('accept', False) == 'application/json':
+    if self.headers.get('accept', False) == 'application/json':
         fmt = 'json'
-      else:
+        self.error_content_type = 'application/json'
+    else:
         fmt = 'text'
 
     if self.headers.get('x-porkchop-refresh', False):
@@ -51,20 +51,20 @@ class GetHandler(BaseHTTPRequestHandler):
 
     try:
       if module:
-        plugin = PorkchopPluginHandler.plugins[module]()
+        plugin = self.server.plugins[module]
         plugin.force_refresh = force_refresh
         self.log_message('Calling plugin: %s with force=%s' % (module, force_refresh))
         data.update({module: plugin.data})
       else:
-        for plugin_name, plugin in PorkchopPluginHandler.plugins.iteritems():
+        for plugin_name, plugin in self.server.plugins.items():
           try:
             plugin.force_refresh = force_refresh
             self.log_message('Calling plugin: %s with force=%s' % (plugin_name, force_refresh))
             # if the plugin has no data,
             # it'll only have one key:
             # refreshtime
-            if len(plugin().data) > 1:
-              data.update({plugin_name: plugin().data})
+            if len(plugin.data) > 1:
+              data.update({plugin_name: plugin.data})
           except:
             self.log_error('Error loading plugin: name=%s exception=%s', plugin_name, sys.exc_info())
 
@@ -79,10 +79,11 @@ class GetHandler(BaseHTTPRequestHandler):
         raise Exception('Unable to load any plugins')
     except:
       self.log_error('Error: %s', sys.exc_info())
-      self.send_response(404)
-      self.send_header('Content-Type', formats[fmt])
-      self.end_headers()
-      self.wfile.write(self.format_output(fmt, {}))
+      if fmt == 'json':
+        msg, explain = self.responses[404]
+        self.error_message_format = json.dumps(
+          {'code': 404, 'message': _quote_html(msg), 'explain': explain})
+      self.send_error(404)
 
     return
 
