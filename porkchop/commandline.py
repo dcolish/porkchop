@@ -58,7 +58,8 @@ def main():
 
   server = ThreadedHTTPServer((options.listen_address, options.listen_port),
                               GetHandler)
-  server.plugins = PorkchopPluginHandler(options.config_dir, options.plugin_dir).plugins
+  plugin_handler = PorkchopPluginHandler(options.config_dir, options.plugin_dir)
+  server.plugins = plugin_handler.plugins
   server.serve_forever()
 
 def collector():

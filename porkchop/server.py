@@ -12,17 +12,14 @@ class GetHandler(BaseHTTPRequestHandler):
     else:
       return '\n'.join(self.json_path(data))
 
-  def json_path(self, data):
+  def json_path(self, data, path=''):
     results = []
-    def path_helper(data, path, results):
-      for key, val in data.iteritems():
-        if type(val) in [dict, defaultdict] :
-          path_helper(val, '/'.join((path, key)), results)
-        else:
-          results.append(('%s %s' % (('/'.join((path, key)))\
-            .replace('.','_'), val)))
-
-    path_helper(data, '', results)
+    for key, val in data.items():
+      if isinstance(val, dict):
+        results += self.json_path(val, '/'.join((path, key)))
+      else:
+        key_ = '/'.join((path, key)).replace('.', '_')
+        results += ['%s %s' % (key_, val)]
     return results
 
   def do_GET(self):
@@ -32,7 +29,7 @@ class GetHandler(BaseHTTPRequestHandler):
 
     try:
       (path, fmt) = request.path.split('.')
-      if fmt not in formats.keys():
+      if fmt not in formats:
         fmt = 'text'
     except ValueError:
       path = request.path
@@ -60,11 +57,9 @@ class GetHandler(BaseHTTPRequestHandler):
           try:
             plugin.force_refresh = force_refresh
             self.log_message('Calling plugin: %s with force=%s' % (plugin_name, force_refresh))
-            # if the plugin has no data,
-            # it'll only have one key:
-            # refreshtime
-            if len(plugin.data) > 1:
-              data.update({plugin_name: plugin.data})
+            plugin_data = plugin.data
+            if plugin_data:
+              data.update({plugin_name: plugin_data})
           except:
             self.log_error('Error loading plugin: name=%s exception=%s', plugin_name, sys.exc_info())
 
