@@ -29,6 +29,7 @@ def main():
   plugin_dir = '/usr/share/porkchop/plugins'
   listen_address = ''
   listen_port = 5000
+  timeout = 3
 
   parser = OptionParser()
   parser.add_option('-c', dest='config_dir',
@@ -46,10 +47,14 @@ def main():
                     default=listen_port,
                     help='Bind to PORT (default: %d)' % listen_port,
                     metavar='PORT')
+  parser.add_option('-t', type="int", dest='timeout',
+                    default=timeout,
+                    help='Server timeout for requests',
+                    metavar='TIMEOUT')
 
   (options, args) = parser.parse_args()
 
-  socket.setdefaulttimeout(60)
+  socket.setdefaulttimeout(options.timeout)
 
   server = ThreadedHTTPServer((options.listen_address, options.listen_port),
                               GetHandler)
