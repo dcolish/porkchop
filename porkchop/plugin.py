@@ -15,9 +15,11 @@ class PorkchopPlugin(object):
   _data = {}
   _lastrefresh = 0
 
-  def __init__(self, config_file=None):
+  def __init__(self):
     self.refresh_interval = 60
     self.force_refresh = False
+
+  def load_config(self, config_file):
     self.config = parse_config(config_file) if config_file else {}
 
   @property
@@ -105,7 +107,8 @@ class PorkchopPluginHandler(object):
           mod_= load_module(module_name, *found_)
           plugin_ = getattr(mod_, '%sPlugin' % module_name.capitalize())
           config_file = os.path.join(self.config_dir, '%s.ini' % module_name)
-          plugins[module_name] = plugin_(config_file)
+          plugins[module_name] = plugin_()
+          plugins[module_name].load_config(config_file)
         except ImportError:
           pass
 
